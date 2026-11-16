@@ -531,7 +531,7 @@ const PRAISE=['Szuper, helyes!','Ügyes vagy, ez jó!','Pontosan így van!','Kiv
 function check(rel){
   const t=state.task;
   if(state.done){newTask();return}
-  let res;
+  let res,nearR=0;
   try{
     if(t.type==='cmp')res=rel===t.ans?'ok':'bad';
     else if(t.type==='be'){const v=parseQ(val('ir'));if(v===null)throw'Írj be egy számot a gyökjel alá!';if(v.n<0)throw'A gyökjel alatt nem állhat negatív szám.';res=v.eq(t.ans)?'ok':'bad'}
@@ -543,17 +543,29 @@ function check(rel){
       let v=S.of(p||0);
       if(r!==null)v=v.add(S.of(q===null?1:q,r));
       else if(q!==null){if(t.type==='single')v=v.add(S.of(q));else throw'Ha nincs gyökös tag, a gyökjel előtti mezőt is hagyd üresen – a számot az első mezőbe írd.'}
-      if(v.eq(t.ans))res=(r!==null&&(r<=1||sqf(r)[0]>1))?'near':'ok';
+      if(v.eq(t.ans)){
+        if(r===null||(r>1&&sqf(r)[0]===1))res='ok';
+        else if(r===1)res='ok1';
+        else if(r===0)res='near0';
+        else{res='near';nearR=r}
+      }
       else res='bad';
     }
   }catch(e){if(typeof e==='string'){feedback('warn',e);return}throw e}
+  let extra='';
+  if(res==='ok1'){res='ok';extra=`<br><span style="font-weight:400">Megjegyzés: ${rad(1)} = 1, ezért a gyökjel el is hagyható – elég a számot beírni, a gyökjel alatti mezőt pedig üresen hagyni.</span>`}
   if(!state.counted){state.counted=true;state.total++;if(res==='ok'){state.score++;state.streak++}else state.streak=0}
   state.tries++;
   if(res==='ok'){
     state.done=true;$('bCheck').style.display='';$('bCheck').textContent='Következő feladat';
-    feedback('ok',`${pick(PRAISE)} <span style="font-weight:400">(Enter: következő feladat)</span>`);
+    feedback('ok',`${pick(PRAISE)} <span style="font-weight:400">(Enter: következő feladat)</span>${extra}`);
+  }else if(res==='near0'){
+    feedback('warn',`Az érték jó, de ${rad(0)} = 0, így a gyökös tagot el kell hagyni: töröld a gyökjel előtti és a gyökjel alatti mezőt is.`);
   }else if(res==='near'){
-    feedback('warn','Az érték jó, de még nem a legegyszerűbb alak: a gyökjel alól még kihozható valami (vagy a gyökjel alatt 0, 1 vagy négyzetszám áll). Próbáld tovább egyszerűsíteni!');
+    const[s]=sqf(nearR);
+    feedback('warn',isSq(nearR)
+      ?`Az érték jó, de a gyökjel alatt négyzetszám áll: ${rad(nearR)} = ${s}. Ilyenkor nem marad gyökjel – számold ki, és a gyökjel alatti mezőt hagyd üresen.`
+      :`Az érték jó, de még nem a legegyszerűbb alak: a gyökjel alatti számnak (${nearR}) még van négyzetszám osztója (${s*s} = ${s}<sup>2</sup>), ezt ki lehet hozni a gyökjel alól.`);
   }else{
     feedback('bad','Sajnos ez nem jó. Próbáld újra!'+(state.tries>=2?' Kérhetsz segítséget, vagy megnézheted a megoldás lépéseit.':''));
   }
