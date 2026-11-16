@@ -211,14 +211,13 @@ const sqH=(c,r)=>r===1?pw(c<0?par(ns(c)):c,2):pw(par(TT(c,r)),2);
 /* 1. Kihozatal */
 function genKi(d){
   let s,t,k=1;
-  if(d===1){s=rnd(2,5);t=pick([2,3,5,6,7]);if(chance(.1))t=1}
-  else if(d===2){s=rnd(2,8);t=pick(SQF.slice(0,10));if(chance(.4))k=rnd(2,4);if(chance(.08))t=1}
+  if(d===1){s=rnd(2,5);t=pick([2,3,5,6,7])}
+  else if(d===2){s=rnd(2,8);t=pick(SQF.slice(0,10));if(chance(.4))k=rnd(2,4)}
   else{s=rnd(4,15);t=pick(SQF.slice(0,12));if(chance(.35))k=rnd(2,3)}
   const N=s*s*t,ans=S.of(k,N),st=[];
   st.push({w:`Keressük meg ${az(N)} ${N} legnagyobb négyzetszám osztóját: ${s*s} = ${s}<sup>2</sup>.`+
     (d===3?` (Prímtényezős alakban ${N} = ${pf(N)}; a páros kitevős részekből áll össze a négyzetszám.)`:'')+
     ` Ezután használjuk: √(a·b) = √a·√b.`,m:xc(N)});
-  if(t===1)st.push({w:`${az(N,true)} ${N} négyzetszám, ezért nem marad gyökjel.`});
   if(k!==1)st.push({w:'Szorozzuk meg a gyökjel előtt álló számmal:',m:`${TT(k,N)} = ${k}·${fmt(S.of(s,t))} = ${fmt(ans)}`});
   return{mode:'ki',title:'Hozd ki a gyökjel alól, amit lehet!',expr:TT(k,N),type:'single',ans,steps:st,
     hint:'Bontsd fel a gyökjel alatti számot egy lehető legnagyobb négyzetszám és egy másik szám szorzatára, pl. 72 = 36·2, így √72 = √36·√2 = 6√2.'};
@@ -285,7 +284,7 @@ function genOv(d){
     if(d>=2&&!terms.some(x=>x.v>1)){terms[0].v=2;terms[0].r=4*t}
     if(d===3){
       if(chance(.5))terms.push({c:pick([-1,1])*rnd(1,7),r:1,v:1,rad:false});
-      else{const q=rnd(2,6);terms.push({c:pick([-1,1]),r:q*q,v:q,rad:false})}
+      else terms.push({c:pick([-1,1])*rnd(1,9),r:1,v:1,rad:false});
     }
     shuffle(terms);
     let ans=new S();terms.forEach(x=>ans=ans.add(S.of(x.c,x.r)));
@@ -370,7 +369,7 @@ function genOs(d){
   const sub=pick(d===1?['ab','rat1']:d===2?['kab','rat2','sum']:['rat2','conj','conj','kab']);
   const st=[];
   if(sub==='ab'||sub==='kab'){
-    const b=pick([2,3,5,6,7,10]),k=rnd(2,d===1?12:20),a=b*k;
+    const b=pick([2,3,5,6,7,10]);let k;do{k=rnd(2,d===1?12:20)}while(isSq(b*k));const a=b*k;
     let k1=1,k2=1,kq=1;
     if(sub==='kab'){k2=rnd(2,4);kq=rnd(1,5);k1=k2*kq;if(d===3&&chance(.3)){k1=-k1;kq=-kq}}
     const ans=S.of(kq,k),expr=frac(TT(k1,a),TT(k2,b));
@@ -498,7 +497,7 @@ function render(){
   $('tExpr').innerHTML=t.expr;
   let a='',note='';
   if(t.type==='single'){a=`<span>=</span><input id="iq" autocomplete="off" aria-label="gyökjel előtti szám">${radInput('ir')}`;
-    note='Ha nem marad gyökjel, a gyökjel alatti mezőt hagyd üresen. Ha a gyökjel előtt 1 áll, az első mező üresen maradhat.'}
+    note='Írd be a gyökjel előtti számot és a gyökjel alatt maradó számot.'}
   else if(t.type==='full'){a=`<span>=</span><input id="ip" autocomplete="off" aria-label="egész rész"><span>+</span><input id="iq" autocomplete="off" aria-label="gyökjel előtti szám">${radInput('ir')}`;
     note='Az eredményt p + q√r alakban írd be. A hiányzó részeket hagyd üresen. Negatív szám: −3, tört: 5/2.'}
   else if(t.type==='be'){a=`<span>=</span>${t.neg?`<span>${MN}</span>`:''}${radInput('ir','5.5em')}`;
