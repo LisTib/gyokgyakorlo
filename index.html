@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gyökgyakorló – négyzetgyökös kifejezések</title>
+<style>
+:root{
+  --main:#5b3fa8; --main-d:#3f2a7e; --main-l:#ede8f9; --acc:#d99a1e; --acc-l:#fdf3df;
+  --ok:#2e8b57; --ok-l:#e4f5eb; --bad:#c0392b; --bad-l:#fcebe8; --warn:#a96a10; --warn-l:#fdf3e1;
+  --info:#2f5f9e; --info-l:#e8f0fb;
+  --bg:#f5f3fb; --card:#fff; --text:#2a2340; --muted:#6b6485; --border:#ddd6ef;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+header{background:linear-gradient(135deg,var(--main),var(--main-d));color:#fff;padding:22px 16px 30px;text-align:center}
+header h1{margin:0;font-size:1.75rem;letter-spacing:.01em}
+header p{margin:6px 0 0;opacity:.92}
+main{max-width:880px;margin:-16px auto 40px;padding:0 14px}
+.card{background:var(--card);border-radius:14px;box-shadow:0 2px 12px rgba(60,40,120,.08);padding:18px;margin-bottom:16px;border:1px solid var(--border)}
+.label{font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px;font-weight:700}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tab{border:2px solid var(--main);background:#fff;color:var(--main);padding:7px 14px;border-radius:999px;cursor:pointer;font-weight:600;font-size:.95rem;font-family:inherit}
+.tab.on{background:var(--main);color:#fff}
+.tab:hover:not(.on){background:var(--main-l)}
+.diff .tab{border-color:var(--acc);color:#865c0c}
+.diff .tab.on{background:var(--acc);color:#fff}
+.diff .tab:hover:not(.on){background:var(--acc-l)}
+.row{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;margin-top:14px}
+.score{display:flex;gap:10px;flex-wrap:wrap;margin-left:auto}
+.pill{background:var(--main-l);color:var(--main-d);padding:6px 12px;border-radius:10px;font-weight:600;font-size:.92rem}
+.task-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.task-title{font-weight:700;color:var(--main-d);margin:0;font-size:1.08rem}
+.task-mode{font-size:.85rem;color:var(--muted);background:var(--main-l);padding:2px 10px;border-radius:999px}
+.m{font-family:"Cambria Math","STIX Two Math","Times New Roman",Georgia,serif}
+.expr{font-size:2rem;padding:20px 6px 8px;text-align:center;overflow-x:auto;white-space:nowrap}
+.answer{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;font-size:1.8rem;padding:6px 0}
+.answer input{width:4.4em;font-size:1.15rem;padding:6px 6px;border:2px solid var(--border);border-radius:8px;text-align:center;font-family:system-ui,Arial,sans-serif;background:#fcfbff;color:var(--text)}
+.answer input:focus{outline:none;border-color:var(--main);background:#fff}
+.answer .sq .ov{padding-top:.1em}
+.answer .sq .sy{font-size:1.25em}
+.note{text-align:center;color:var(--muted);font-size:.88rem;margin-top:4px}
+/* négyzetgyök */
+.sq{display:inline-flex;align-items:stretch;white-space:nowrap;vertical-align:middle}
+.sq .sy{font-size:1.12em;line-height:1;display:flex;align-items:flex-end;padding-bottom:.02em;margin-right:-.03em}
+.sq .ov{border-top:.07em solid currentColor;padding:.06em .12em 0 .1em;line-height:1.15;display:inline-flex;align-items:center}
+/* tört */
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .12em;font-size:.92em}
+.fr .nu{padding:0 .25em .06em;display:flex;justify-content:center;align-items:flex-end}
+.fr .de{border-top:.065em solid currentColor;padding:.08em .25em 0;display:flex;justify-content:center;align-items:flex-start}
+sup{font-size:.6em}
+.btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px}
+.btn{border:none;border-radius:10px;padding:10px 18px;font-weight:600;font-size:1rem;cursor:pointer;font-family:inherit}
+.btn.p{background:var(--main);color:#fff}
+.btn.p:hover{background:var(--main-d)}
+.btn.s{background:var(--main-l);color:var(--main-d)}
+.btn.s:hover{background:#ddd3f5}
+.btn.g{background:#fff;border:2px solid var(--border);color:var(--text)}
+.btn.g:hover{border-color:var(--main)}
+.cmpb{font-size:1.6rem;width:2.4em;height:2.1em;border-radius:10px;border:2px solid var(--main);background:#fff;color:var(--main);cursor:pointer;font-weight:700}
+.cmpb:hover{background:var(--main-l)}
+.fb{margin-top:14px;padding:10px 14px;border-radius:10px;display:none;font-weight:500}
+.fb.ok{display:block;background:var(--ok-l);color:var(--ok);border-left:5px solid var(--ok)}
+.fb.bad{display:block;background:var(--bad-l);color:var(--bad);border-left:5px solid var(--bad)}
+.fb.warn{display:block;background:var(--warn-l);color:var(--warn);border-left:5px solid var(--warn)}
+.fb.info{display:block;background:var(--info-l);color:var(--info);border-left:5px solid var(--info)}
+.steps{display:none;margin-top:16px;border-top:1px dashed var(--border);padding-top:10px}
+.steps h3{margin:4px 0 6px;font-size:1rem;color:var(--main-d)}
+.step{margin:10px 0;padding-left:12px;border-left:3px solid var(--main-l)}
+.step .why{color:var(--muted);font-size:.95rem}
+.step .mm{font-size:1.35rem;overflow-x:auto;padding:4px 0;line-height:2}
+.final{margin-top:10px;background:var(--main-l);border-radius:10px;padding:8px 12px;font-size:1.35rem;overflow-x:auto}
+details.rules summary{cursor:pointer;font-weight:700;color:var(--main-d);font-size:1.02rem}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:12px}
+.rule{background:#faf9fe;border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.rule b{color:var(--main-d);display:block;margin-bottom:4px}
+.rule .mm{font-size:1.2rem;line-height:2}
+.rule small{color:var(--muted)}
+footer{text-align:center;color:var(--muted);font-size:.85rem;padding:0 14px 30px}
+@media (max-width:560px){
+  .expr{font-size:1.55rem}
+  .answer{font-size:1.45rem}
+  .answer input{width:3.6em;font-size:1rem}
+  .step .mm{font-size:1.15rem}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Gyökgyakorló</h1>
+  <p>Négyzetgyökös kifejezések: kihozatal, bevitel, összevonás, szorzás, osztás, hatványozás</p>
+</header>
+<main>
+  <section class="card">
+    <p class="label">Feladattípus</p>
+    <div class="tabs" id="modes"></div>
+    <div class="row">
+      <div>
+        <p class="label">Nehézség</p>
+        <div class="tabs diff" id="diffs"></div>
+      </div>
+      <div class="score">
+        <span class="pill" id="sc">Helyes: 0 / 0</span>
+        <span class="pill" id="st">Sorozat: 0</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="taskCard">
+    <div class="task-head">
+      <p class="task-title" id="tTitle"></p>
+      <span class="task-mode" id="tMode"></span>
+    </div>
+    <div class="expr m" id="tExpr"></div>
+    <div class="answer m" id="tAns"></div>
+    <div class="note" id="tNote"></div>
+    <div class="btns">
+      <button class="btn p" id="bCheck">Ellenőrzés</button>
+      <button class="btn s" id="bHint">Segítség</button>
+      <button class="btn s" id="bSteps">Megoldás lépései</button>
+      <button class="btn g" id="bNew">Új feladat</button>
+    </div>
+    <div class="fb" id="fb"></div>
+    <div class="steps" id="steps"></div>
+  </section>
+
+  <section class="card">
+    <details class="rules">
+      <summary>Szabályok, azonosságok (kattints a megnyitáshoz)</summary>
+      <div class="rgrid m" id="rules"></div>
+    </details>
+  </section>
+</main>
+<footer>Csak négyzetgyökök szerepelnek. A gyökjel alatti számok mindig nemnegatívak.</footer>
+
+<script>
+/* ===================== Alapok ===================== */
+const MN='−';
+const SUF={2:'vel',3:'mal',5:'tel',6:'tal',7:'tel',10:'zel'};
+const SQF=[2,3,5,6,7,10,11,13,14,15,17,19,21,22,23,26,29,30];
+const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const chance=p=>Math.random()<p;
+const isSq=n=>{const r=Math.round(Math.sqrt(n));return r*r===n};
+const NONSQ=n=>{const a=[];for(let i=2;i<=n;i++)if(!isSq(i))a.push(i);return a};
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b]}return a||1}
+function sqf(n){for(let s=Math.floor(Math.sqrt(n)+1e-9);s>=1;s--)if(n%(s*s)===0)return[s,n/(s*s)];return[1,n]}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function az(n,cap){const s=String(Math.abs(n));let v=s[0]==='5'||(s[0]==='1'&&(s.length===1||s.length===4||s.length===7));const w=v?'az':'a';return cap?w[0].toUpperCase()+w.slice(1):w}
+
+/* Racionális szám */
+class Q{
+  constructor(n,d=1){if(d<0){n=-n;d=-d}const g=gcd(n,d);this.n=n/g;this.d=d/g}
+  static of(x){return x instanceof Q?x:new Q(x,1)}
+  add(o){o=Q.of(o);return new Q(this.n*o.d+o.n*this.d,this.d*o.d)}
+  neg(){return new Q(-this.n,this.d)}
+  sub(o){return this.add(Q.of(o).neg())}
+  mul(o){o=Q.of(o);return new Q(this.n*o.n,this.d*o.d)}
+  div(o){o=Q.of(o);return new Q(this.n*o.d,this.d*o.n)}
+  isZero(){return this.n===0}
+  eq(o){o=Q.of(o);return this.n===o.n&&this.d===o.d}
+  val(){return this.n/this.d}
+}
+/* p + q1√r1 + q2√r2 + ... alakú szám (r négyzetmentes, r=1 a racionális rész) */
+class S{
+  constructor(){this.m=new Map()}
+  static of(c,r=1){const s=new S();c=Q.of(c);if(r===0||c.isZero())return s;const[k,t]=sqf(r);s._add(t,c.mul(k));return s}
+  _add(t,c){const v=(this.m.get(t)||new Q(0)).add(c);if(v.isZero())this.m.delete(t);else this.m.set(t,v)}
+  clone(){const s=new S();this.m.forEach((v,k)=>s.m.set(k,v));return s}
+  add(o){const s=this.clone();o.m.forEach((v,k)=>s._add(k,v));return s}
+  neg(){const s=new S();this.m.forEach((v,k)=>s.m.set(k,v.neg()));return s}
+  sub(o){return this.add(o.neg())}
+  mul(o){const s=new S();this.m.forEach((v1,k1)=>o.m.forEach((v2,k2)=>{const[k,t]=sqf(k1*k2);s._add(t,v1.mul(v2).mul(k))}));return s}
+  pow(n){let r=S.of(1);for(let i=0;i<n;i++)r=r.mul(this);return r}
+  inv(){
+    const keys=[...this.m.keys()].filter(k=>k!==1);
+    if(keys.length===0)return S.of(new Q(1).div(this.m.get(1)));
+    if(keys.length>1)throw new Error('nem támogatott');
+    const t=keys[0],a=this.m.get(1)||new Q(0),b=this.m.get(t);
+    const den=a.mul(a).sub(b.mul(b).mul(t));
+    return S.of(a).add(S.of(b.neg(),t)).mul(S.of(new Q(1).div(den)));
+  }
+  div(o){return this.mul(o.inv())}
+  eq(o){if(this.m.size!==o.m.size)return false;for(const[k,v]of this.m){const w=o.m.get(k);if(!w||!w.eq(v))return false}return true}
+  val(){let x=0;this.m.forEach((v,k)=>x+=v.val()*Math.sqrt(k));return x}
+}
+
+/* ===================== Megjelenítés ===================== */
+const rad=x=>`<span class="sq"><span class="sy">√</span><span class="ov">${x}</span></span>`;
+const frac=(a,b)=>`<span class="fr"><span class="nu">${a}</span><span class="de">${b}</span></span>`;
+const pw=(x,n)=>n===1?`${x}`:`${x}<sup>${n}</sup>`;
+const par=x=>`(${x})`;
+const ns=n=>n<0?MN+(-n):String(n);
+function qH(q){q=Q.of(q);const a=Math.abs(q.n);return(q.n<0?MN:'')+(q.d===1?String(a):frac(a,q.d))}
+function T(c,r){c=Q.of(c);const neg=c.n<0,a=Math.abs(c.n),d=c.d;let body;
+  if(r===1)body=d===1?String(a):frac(a,d);
+  else{const top=(a===1?'':a)+rad(r);body=d===1?top:frac(top,d)}
+  return{neg,body}}
+function E(list){return list.map(([c,r],i)=>{const{neg,body}=T(c,r);return i===0?(neg?MN:'')+body:(neg?' '+MN+' ':' + ')+body}).join('')}
+const TT=(c,r)=>E([[c,r]]);
+function J(arr){return arr.map((s,i)=>i===0?s:(s.startsWith(MN)?' '+MN+' '+s.slice(1):' + '+s)).join('')}
+function fmt(s){if(s.m.size===0)return'0';const keys=[...s.m.keys()].sort((a,b)=>a-b);return E(keys.map(k=>[s.m.get(k),k]))}
+function pf(n){const f=[];let p=2;while(n>1){let e=0;while(n%p===0){n/=p;e++}if(e)f.push(pw(p,e));p++}return f.join('·')}
+/* kihozatal lánca: √72 = √(36·2) = √36·√2 = 6√2 */
+function xc(N){const[s,t]=sqf(N);if(s===1)return null;const q=s*s;
+  if(t===1)return`${rad(N)} = ${rad(pw(s,2))} = ${s}`;
+  return`${rad(N)} = ${rad(q+'·'+t)} = ${rad(q)}·${rad(t)} = ${s}${rad(t)}`}
+const sqH=(c,r)=>r===1?pw(c<0?par(ns(c)):c,2):pw(par(TT(c,r)),2);
+
+/* ===================== Feladatgenerátorok ===================== */
+/* 1. Kihozatal */
+function genKi(d){
+  let s,t,k=1;
+  if(d===1){s=rnd(2,5);t=pick([2,3,5,6,7]);if(chance(.1))t=1}
+  else if(d===2){s=rnd(2,8);t=pick(SQF.slice(0,10));if(chance(.4))k=rnd(2,4);if(chance(.08))t=1}
+  else{s=rnd(4,15);t=pick(SQF.slice(0,12));if(chance(.35))k=rnd(2,3)}
+  const N=s*s*t,ans=S.of(k,N),st=[];
+  st.push({w:`Keressük meg ${az(N)} ${N} legnagyobb négyzetszám osztóját: ${s*s} = ${s}<sup>2</sup>.`+
+    (d===3?` (Prímtényezős alakban ${N} = ${pf(N)}; a páros kitevős részekből áll össze a négyzetszám.)`:'')+
+    ` Ezután használjuk: √(a·b) = √a·√b.`,m:xc(N)});
+  if(t===1)st.push({w:`${az(N,true)} ${N} négyzetszám, ezért nem marad gyökjel.`});
+  if(k!==1)st.push({w:'Szorozzuk meg a gyökjel előtt álló számmal:',m:`${TT(k,N)} = ${k}·${fmt(S.of(s,t))} = ${fmt(ans)}`});
+  return{mode:'ki',title:'Hozd ki a gyökjel alól, amit lehet!',expr:TT(k,N),type:'single',ans,steps:st,
+    hint:'Bontsd fel a gyökjel alatti számot egy lehető legnagyobb négyzetszám és egy másik szám szorzatára, pl. 72 = 36·2, így √72 = √36·√2 = 6√2.'};
+}
+
+/* 2. Bevitel (és összehasonlítás) */
+function genBe(d){
+  if(chance(.3))return genCmp(d);
+  let c,t,neg=false,fr=false;
+  if(d===1){c=new Q(rnd(2,5));t=pick([2,3,5,6,7])}
+  else if(d===2){c=new Q(rnd(2,9));t=pick(NONSQ(15));neg=chance(.3)}
+  else{
+    if(chance(.5)){const q=pick([2,3,5]);let p;do{p=rnd(1,4)}while(gcd(p,q)!==1);c=new Q(p,q);t=pick(NONSQ(30));fr=true}
+    else{c=new Q(rnd(3,12));t=pick(NONSQ(20))}
+    neg=chance(.3);
+  }
+  const c2=c.mul(c),ans=c2.mul(t);
+  const body=(fr?frac(c.n,c.d):String(c.n))+rad(t);
+  const expr=(neg?MN:'')+body,st=[];
+  if(!fr){
+    st.push({w:`A gyökjel előtti szorzót négyzetre emelve visszük be a gyökjel alá, hiszen ${c.n} = ${rad(pw(c.n,2))} = ${rad(c2.n)}.`,
+      m:`${body} = ${rad(c2.n)}·${rad(t)} = ${rad(c2.n+'·'+t)} = ${rad(ans.n)}`});
+  }else{
+    const raw=frac(c2.n*t,c2.d);let m=`${body} = ${rad(frac(c2.n,c2.d))}·${rad(t)} = ${rad(frac(c2.n+'·'+t,c2.d))} = ${rad(raw)}`;
+    if(!(ans.n===c2.n*t&&ans.d===c2.d))m+=` = ${rad(qH(ans))}`;
+    st.push({w:`A tört szorzót is négyzetre emelve visszük be: ${frac(c.n,c.d)} = ${rad(frac(c2.n,c2.d))}. Végül egyszerűsítjük a gyökjel alatti törtet, ha lehet.`,m});
+  }
+  if(neg)st.push({w:'A negatív előjel a gyökjel előtt marad, mert a gyökjel alatt nem állhat negatív szám:',m:`${expr} = ${MN}${rad(qH(ans))}`});
+  return{mode:'be',title:'Vidd be a gyökjel alá a gyökjel előtti szorzót!',expr,type:'be',neg,ans,steps:st,
+    hint:'a√b = √(a²·b): a szorzót négyzetre emelve visszük a gyökjel alá.'+(neg?' A negatív előjel a gyökjel előtt marad.':'')+(fr?' Tört esetén a számlálót és a nevezőt is négyzetre emeljük.':'')};
+}
+function genCmp(d){
+  let k1=2,t1=3,k2=3,t2=2,N1=12,N2=18;
+  for(let i=0;i<2000;i++){
+    const a=rnd(2,d===1?5:8),b=pick(NONSQ(d===1?10:20)),A=a*a*b;
+    const c=rnd(2,d===1?5:9);if(c===a)continue;
+    const e=Math.round(A/(c*c))+rnd(-1,1);if(e<2||isSq(e))continue;
+    const B=c*c*e;if(Math.abs(A-B)<=Math.max(4,A*.12)){k1=a;t1=b;N1=A;k2=c;t2=e;N2=B;break}
+  }
+  const rel=N1>N2?'>':N1<N2?'<':'=';
+  const rh=rel==='>'?'&gt;':rel==='<'?'&lt;':'=';
+  const st=[
+    {w:'Vigyük be mindkét szám szorzóját a gyökjel alá, így a gyökjel alatti számokat már könnyű összehasonlítani:',m:`${TT(k1,t1)} = ${rad(k1*k1+'·'+t1)} = ${rad(N1)}`},
+    {m:`${TT(k2,t2)} = ${rad(k2*k2+'·'+t2)} = ${rad(N2)}`},
+    {w:rel==='='?'A gyökjel alatti számok egyenlők, tehát a két szám egyenlő.':'A nagyobb pozitív számnak a négyzetgyöke is nagyobb, ezért:',m:`${rad(N1)} ${rh} ${rad(N2)}, tehát ${TT(k1,t1)} ${rh} ${TT(k2,t2)}`}];
+  return{mode:'be',title:'Hasonlítsd össze a két számot! (Használd a gyökjel alá bevitelt.)',expr:`${TT(k1,t1)} &nbsp;<span style="color:var(--muted)">?</span>&nbsp; ${TT(k2,t2)}`,
+    type:'cmp',ans:rel,final:`${TT(k1,t1)} ${rh} ${TT(k2,t2)}`,steps:st,
+    hint:'Vidd be mindkét szám szorzóját a gyökjel alá, és hasonlítsd össze a gyökjel alatti számokat!'};
+}
+
+/* 3. Összevonás (összeadás, kivonás) */
+function genOv(d){
+  const bases=d===1?[2,3,5]:d===2?[2,3,5,6,7]:[2,3,5,6,7,10,11];
+  const lim=d===1?50:d===2?130:250;
+  for(let guard=0;guard<500;guard++){
+    const t=pick(bases),n=d===1?rnd(2,3):d===2?3:rnd(3,4),terms=[];
+    for(let i=0;i<n;i++){
+      let m=d===1?(chance(.3)?2:1):rnd(1,d===2?4:5);
+      while(m>1&&m*m*t>lim)m--;
+      let c=d===1?rnd(1,6):d===2?(chance(.7)?1:rnd(2,3)):(chance(.6)?1:rnd(2,4));
+      if(i>0&&chance(.45))c=-c;
+      terms.push({c,r:m*m*t,v:m,rad:true});
+    }
+    if(d>=2&&!terms.some(x=>x.v>1)){terms[0].v=2;terms[0].r=4*t}
+    if(d===3){
+      if(chance(.5))terms.push({c:pick([-1,1])*rnd(1,7),r:1,v:1,rad:false});
+      else{const q=rnd(2,6);terms.push({c:pick([-1,1]),r:q*q,v:q,rad:false})}
+    }
+    shuffle(terms);
+    let ans=new S();terms.forEach(x=>ans=ans.add(S.of(x.c,x.r)));
+    if(!ans.m.get(t))continue;
+    const expr=E(terms.map(x=>[x.c,x.r])),st=[];
+    const chains=[...new Set(terms.filter(x=>x.r>1&&sqf(x.r)[0]>1).map(x=>x.r))].map(xc);
+    const simp=terms.map(x=>x.rad?[x.c*x.v,t]:[x.c*x.v,1]);
+    if(chains.length){
+      st.push({w:'Először hozzuk ki a gyökjel alól, amit lehet:',m:chains.join('<br>')});
+      st.push({w:'Írjuk be az egyszerűsített alakokat:',m:`${expr} = ${E(simp)}`});
+    }
+    const rc=simp.filter(x=>x[1]===t).map(x=>[x[0],1]),rat=simp.filter(x=>x[1]===1);
+    const radStr=rc.length>1?`(${E(rc)})${rad(t)}`:TT(rc[0][0],t);
+    const ratStr=rat.length?(rat.length>1?`(${E(rat)})`:E(rat)):'';
+    const comb=ratStr?J([ratStr,radStr]):radStr;
+    st.push({w:'Vonjuk össze az egynemű tagokat (azokat, amelyekben ugyanaz a szám áll a gyökjel alatt):',m:`= ${comb} = ${fmt(ans)}`});
+    return{mode:'ov',title:'Végezd el a műveleteket! Vond össze az egynemű tagokat.',expr,type:'full',ans,steps:st,
+      hint:`Csak az azonos gyökjel alatti számú tagok vonhatók össze: p√a + q√a = (p + q)√a. Előtte hozd ki a gyökjel alól, amit lehet! Vigyázz: √a + √b ≠ √(a + b).`};
+  }
+  return genOv(1);
+}
+
+/* 4. Szorzás */
+function genSz(d){
+  const sub=pick(d===1?['ab','kab']:d===2?['kab','dist','ab']:['dist','binom','conj']);
+  const st=[];
+  if(sub==='ab'||sub==='kab'){
+    let a,b;const L=d===1?20:40,M=d===1?300:1000;
+    do{a=rnd(2,L);b=rnd(2,L)}while(isSq(a)||isSq(b)||a===b||sqf(a*b)[0]<2||a*b>M);
+    let k1=1,k2=1;if(sub==='kab'){k1=rnd(2,5);k2=rnd(2,5);if(d>=2&&chance(.3))k2=-k2}
+    const K=k1*k2,ab=a*b,ans=S.of(K,ab),[s,t]=sqf(ab);
+    const expr=`${TT(k1,a)} · ${k2<0?par(TT(k2,b)):TT(k2,b)}`;
+    if(sub==='ab')st.push({w:'Négyzetgyököket úgy szorzunk, hogy a gyökjel alatti számokat szorozzuk össze: √a·√b = √(a·b).',m:`${expr} = ${rad(a+'·'+b)} = ${rad(ab)}`});
+    else st.push({w:'A gyökjel előtti számokat egymással, a gyökjel alatti számokat egymással szorozzuk:',m:`${expr} = ${k1}·${k2<0?par(ns(k2)):k2}·${rad(a+'·'+b)} = ${TT(K,ab)}`});
+    st.push({w:'Hozzuk ki a gyökjel alól, amit lehet:',m:xc(ab)+(K!==1?`<br>${TT(K,ab)} = ${ns(K)}·${fmt(S.of(s,t))} = ${fmt(ans)}`:'')});
+    return{mode:'sz',title:'Végezd el a szorzást, és hozd a legegyszerűbb alakra!',expr,type:'full',ans,steps:st,
+      hint:'√a·√b = √(a·b). A gyökjel előtti számokat összeszorozzuk. Utána hozd ki a gyökjel alól, amit lehet!'};
+  }
+  if(sub==='dist'){
+    const t=pick([2,3,5,6,7]),al=rnd(1,3),m=rnd(1,2),be=pick([-1,1])*rnd(1,3),n=rnd(1,3),ga=pick([-1,1])*rnd(1,6);
+    const M=m*m*t,N=n*n*t,radFirst=chance(.6);
+    const inner=radFirst?E([[be,N],[ga,1]]):E([[ga,1],[be,N]]);
+    const expr=`${TT(al,M)}${par(inner)}`;
+    const p1=S.of(al*be,M*N),p2=S.of(al*ga,M),ans=p1.add(p2);
+    const l1=[[al*be,M*N],[al*ga,M]];if(!radFirst)l1.reverse();
+    st.push({w:'Bontsuk fel a zárójelet: a zárójel előtti tényezővel a zárójel minden tagját megszorozzuk.',m:`${expr} = ${E(l1)}`});
+    const ch=[...new Set([M*N,M])].map(xc).filter(Boolean);
+    if(ch.length)st.push({w:'Hozzuk ki a gyökjel alól, amit lehet:',m:ch.join('<br>')});
+    const pp=radFirst?[fmt(p1),fmt(p2)]:[fmt(p2),fmt(p1)];
+    const j=J(pp),f=fmt(ans);
+    st.push({w:'Írjuk be, és vonjuk össze, ha lehet:',m:`= ${j}`+(j!==f?` = ${f}`:'')});
+    return{mode:'sz',title:'Bontsd fel a zárójelet, és hozd a legegyszerűbb alakra!',expr,type:'full',ans,steps:st,
+      hint:'a(b + c) = ab + ac. Minden szorzat után hozd ki a gyökjel alól, amit lehet, majd vond össze az egynemű tagokat.'};
+  }
+  if(sub==='binom'){
+    const t=pick([2,3,5,6,7]),x=rnd(1,5),y=pick([-1,1])*rnd(1,3),z=pick([-1,1])*rnd(1,5),w=pick([-1,1])*rnd(1,3);
+    const A=S.of(x).add(S.of(y,t)),B=S.of(z).add(S.of(w,t)),ans=A.mul(B);
+    const expr=par(E([[x,1],[y,t]]))+par(E([[z,1],[w,t]]));
+    st.push({w:`Minden tagot minden taggal megszorzunk. Közben ${rad(t)}·${rad(t)} = ${t}.`,
+      m:`${expr} = ${J([fmt(S.of(x*z)),fmt(S.of(x*w,t)),fmt(S.of(y*z,t)),ns(y*w)+'·'+t])}`});
+    st.push({w:'Számoljuk ki, és vonjuk össze az egynemű tagokat:',m:`= ${J([fmt(S.of(x*z)),fmt(S.of(x*w,t)),fmt(S.of(y*z,t)),fmt(S.of(y*w*t))])} = ${fmt(ans)}`});
+    return{mode:'sz',title:'Végezd el a szorzást!',expr,type:'full',ans,steps:st,
+      hint:'(a + b)(c + d) = ac + ad + bc + bd. Ne feledd: √a·√a = a.'};
+  }
+  /* conj */
+  if(chance(.5)){
+    let a,b;do{a=rnd(2,20);b=rnd(2,20)}while(isSq(a)||isSq(b)||a===b);
+    const expr=par(E([[1,a],[1,b]]))+par(E([[1,a],[-1,b]])),ans=S.of(a-b);
+    st.push({w:'Nevezetes azonosság: (A + B)(A − B) = A² − B².',m:`${expr} = ${pw(par(rad(a)),2)} ${MN} ${pw(par(rad(b)),2)} = ${a} ${MN} ${b} = ${fmt(ans)}`});
+    return{mode:'sz',title:'Végezd el a szorzást!',expr,type:'full',ans,steps:st,hint:'Használd a nevezetes azonosságot: (A + B)(A − B) = A² − B².'};
+  }
+  const x=rnd(1,6),y=rnd(1,3),t=pick(NONSQ(12));
+  const first=chance(.5);
+  const expr=first?par(E([[x,1],[y,t]]))+par(E([[x,1],[-y,t]])):par(E([[x,1],[-y,t]]))+par(E([[x,1],[y,t]]));
+  const ans=S.of(x*x-y*y*t);
+  st.push({w:'Nevezetes azonosság: (A + B)(A − B) = A² − B², és (√a)² = a.',m:`${expr} = ${pw(x,2)} ${MN} ${sqH(y,t)} = ${x*x} ${MN} ${y*y*t} = ${fmt(ans)}`});
+  return{mode:'sz',title:'Végezd el a szorzást!',expr,type:'full',ans,steps:st,hint:'Használd a nevezetes azonosságot: (A + B)(A − B) = A² − B².'};
+}
+
+/* 5. Osztás és nevező gyöktelenítése */
+function genOs(d){
+  const sub=pick(d===1?['ab','rat1']:d===2?['kab','rat2','sum']:['rat2','conj','conj','kab']);
+  const st=[];
+  if(sub==='ab'||sub==='kab'){
+    const b=pick([2,3,5,6,7,10]),k=rnd(2,d===1?12:20),a=b*k;
+    let k1=1,k2=1,kq=1;
+    if(sub==='kab'){k2=rnd(2,4);kq=rnd(1,5);k1=k2*kq;if(d===3&&chance(.3)){k1=-k1;kq=-kq}}
+    const ans=S.of(kq,k),expr=frac(TT(k1,a),TT(k2,b));
+    if(sub==='ab')st.push({w:'Négyzetgyököket úgy osztunk, hogy a gyökjel alatti számokat osztjuk el: √a : √b = √(a : b).',m:`${expr} = ${rad(frac(a,b))} = ${rad(k)}`});
+    else st.push({w:'A gyökjel előtti számokat egymással, a gyökjel alatti számokat egymással osztjuk:',m:`${expr} = ${frac(ns(k1),k2)}·${rad(frac(a,b))} = ${TT(kq,k)}`});
+    if(sqf(k)[0]>1)st.push({w:'Hozzuk ki a gyökjel alól, amit lehet:',m:xc(k)+(kq!==1?`<br>${TT(kq,k)} = ${fmt(ans)}`:'')});
+    return{mode:'os',title:'Végezd el az osztást, és hozd a legegyszerűbb alakra!',expr,type:'full',ans,steps:st,
+      hint:'√a : √b = √(a : b). A gyökjel előtti számokat is elosztjuk egymással. Utána hozd ki a gyökjel alól, amit lehet!'};
+  }
+  if(sub==='rat1'||sub==='rat2'){
+    const t=pick([2,3,5,6,7,10]),k=sub==='rat2'?rnd(2,4):1;
+    const c=chance(.5)?t*k*rnd(1,2)/(sub==='rat2'&&chance(.5)?k:1):rnd(1,9);
+    const ans=S.of(c).div(S.of(k,t)),expr=frac(c,TT(k,t));
+    const mid=frac(TT(c,t),k===1?t:`${k}·${t}`),f=fmt(ans);
+    let m=`${expr} = ${frac(c+'·'+rad(t),TT(k,t)+'·'+rad(t))} = ${mid}`;
+    if(k!==1)m+=` = ${frac(TT(c,t),k*t)}`;
+    st.push({w:`Gyöktelenítsük a nevezőt: bővítsük a törtet ${rad(t)}-${SUF[t]} (a számlálót és a nevezőt is megszorozzuk vele), mert ${rad(t)}·${rad(t)} = ${t}.`,m});
+    if(f!==frac(TT(c,t),k*t))st.push({w:'Egyszerűsítsünk:',m:`= ${f}`});
+    return{mode:'os',title:'Gyöktelenítsd a nevezőt, és egyszerűsíts!',expr,type:'full',ans,steps:st,
+      hint:'a/√b = a·√b/(√b·√b) = a√b/b. A választ tört együtthatóval is beírhatod, pl. 5/2 a √2 elé.'};
+  }
+  if(sub==='sum'){
+    const t=pick([2,3,5,6]);let m1=rnd(2,5),m2=rnd(1,4);while(m2===m1)m2=rnd(1,4);const sg=pick([-1,1]);
+    const expr=frac(E([[1,m1*m1*t],[sg,m2*m2*t]]),rad(t)),ans=S.of(m1+sg*m2),s=sg<0?MN:'+';
+    st.push({w:'Tagonként osztunk: a számláló mindkét tagját elosztjuk a nevezővel, és √a : √b = √(a : b).',
+      m:`${expr} = ${rad(frac(m1*m1*t,t))} ${s} ${rad(frac(m2*m2*t,t))} = ${rad(m1*m1)} ${s} ${rad(m2*m2)} = ${m1} ${s} ${m2} = ${fmt(ans)}`});
+    return{mode:'os',title:'Végezd el az osztást!',expr,type:'full',ans,steps:st,hint:'Oszd el a számláló mindkét tagját külön-külön a nevezővel!'};
+  }
+  /* conj: c / (a + b√t) */
+  for(let g=0;g<500;g++){
+    const t=pick([2,3,5,6,7,10,11]),radFirst=chance(.5);
+    let a=pick([-1,1])*rnd(1,5),b=pick([-1,1])*(chance(.3)?2:1);
+    if(radFirst)b=Math.abs(b);else a=Math.abs(a);
+    const D=radFirst?b*b*t-a*a:a*a-b*b*t;
+    if(D===0||Math.abs(D)>9)continue;
+    const c=chance(.7)?Math.abs(D)*rnd(1,3):rnd(1,6);
+    const denL=radFirst?[[b,t],[a,1]]:[[a,1],[b,t]],conjL=radFirst?[[b,t],[-a,1]]:[[a,1],[-b,t]];
+    const conj=radFirst?S.of(b,t).sub(S.of(a)):S.of(a).sub(S.of(b,t));
+    const den=S.of(a).add(S.of(b,t)),num=S.of(c).mul(conj),ans=S.of(c).div(den);
+    const expr=frac(c,E(denL));
+    st.push({w:`Gyöktelenítés: bővítsük a törtet a nevező „párjával” (konjugáltjával): ${par(E(conjL))}. Így a nevezőből eltűnik a gyök.`,
+      m:`${expr} = ${frac(c+'·'+par(E(conjL)),par(E(denL))+par(E(conjL)))}`});
+    const sq1=radFirst?sqH(b,t):pw(a,2),sq2=radFirst?pw(Math.abs(a),2):sqH(Math.abs(b),t);
+    const v1=radFirst?b*b*t:a*a,v2=radFirst?a*a:b*b*t;
+    st.push({w:'A nevezőben nevezetes azonosság: (A + B)(A − B) = A² − B².',m:`${par(E(denL))}${par(E(conjL))} = ${sq1} ${MN} ${sq2} = ${v1} ${MN} ${v2} = ${ns(D)}`});
+    const f=fmt(ans);
+    st.push({w:'A számlálóban bontsuk fel a zárójelet, majd egyszerűsítsünk:',m:`= ${frac(fmt(num),ns(D))} = ${f}`});
+    return{mode:'os',title:'Gyöktelenítsd a nevezőt!',expr,type:'full',ans,steps:st,
+      hint:'Bővítsd a törtet a nevező „párjával”: (a + √b) párja (a − √b). A nevezőben (a + √b)(a − √b) = a² − b lesz.'};
+  }
+  return genOs(2);
+}
+
+/* 6. Hatványozás */
+function binSq(c1,r1,c2,r2){ /* (T1 ± T2)², c1>0 */
+  const sg=c2<0?MN:'+',a2=Math.abs(c2);
+  const A2=S.of(c1,r1).pow(2),B2=S.of(a2,r2).pow(2),ans=S.of(c1,r1).add(S.of(c2,r2)).pow(2);
+  const out=[];
+  out.push({w:`Nevezetes azonosság: (A ${sg} B)² = A² ${sg} 2AB + B².`,
+    m:`= ${sqH(c1,r1)} ${sg} 2·${TT(c1,r1)}·${TT(a2,r2)} + ${sqH(a2,r2)}`});
+  const mid=TT(2*c1*a2,r1*r2);
+  out.push({w:'Számoljuk ki a tagokat:',m:`= ${fmt(A2)} ${sg} ${mid} + ${fmt(B2)}`});
+  const ch=r1*r2>1?xc(r1*r2):null;
+  if(ch)out.push({w:'Hozzuk ki a gyökjel alól, amit lehet:',m:ch});
+  out.push({w:'Vonjuk össze az egynemű tagokat:',m:`= ${fmt(ans)}`});
+  return{out,ans};
+}
+function genHv(d){
+  const sub=pick(d===1?['ksq','ksq','pow']:d===2?['kpow','pow','bin1']:['bin2','bin1x','kpow']);
+  const st=[];
+  const R=(o)=>Object.assign({mode:'hv',type:'full',steps:st},o);
+  if(sub==='ksq'){
+    const a=pick(NONSQ(d===1?12:20)),k=chance(.25)?1:rnd(2,6);
+    const expr=pw(par(TT(k,a)),2),ans=S.of(k*k*a);
+    if(k===1)st.push({w:'Egy szám négyzetgyökének a négyzete maga a szám: (√a)² = a.',m:`${expr} = ${a}`});
+    else st.push({w:'Szorzat hatványa a tényezők hatványának szorzata: (k√a)² = k²·(√a)², és (√a)² = a.',m:`${expr} = ${pw(k,2)}·${pw(par(rad(a)),2)} = ${k*k}·${a} = ${fmt(ans)}`});
+    return R({title:'Végezd el a hatványozást!',expr,ans,hint:'(√a)² = a, és (k√a)² = k²·a.'});
+  }
+  if(sub==='pow'){
+    const a=pick([2,3,5,6,7]),n=rnd(3,d===1?4:6),expr=pw(par(rad(a)),n),ans=S.of(1,a).pow(n);
+    if(n%2===0)st.push({w:'Használjuk ki, hogy (√a)² = a:',m:`${expr} = ${pw(par(pw(par(rad(a)),2)),n/2)} = ${pw(a,n/2)} = ${fmt(ans)}`});
+    else st.push({w:`Bontsuk páros kitevőjű hatványra és egy √${a} tényezőre, és használjuk ki, hogy (√a)² = a:`,
+      m:`${expr} = ${pw(par(rad(a)),n-1)}·${rad(a)} = ${pw(a,(n-1)/2)}·${rad(a)} = ${fmt(ans)}`});
+    return R({title:'Végezd el a hatványozást!',expr,ans,hint:'Minden (√a)² helyére a írható. Páratlan kitevőnél egy √a megmarad.'});
+  }
+  if(sub==='kpow'){
+    const k=rnd(2,3)*(d===3&&chance(.4)?-1:1),a=pick([2,3,5]),n=rnd(3,4);
+    const expr=pw(par(TT(k,a)),n),ans=S.of(k,a).pow(n);
+    st.push({w:'Szorzat hatványa a tényezők hatványának szorzata: (k√a)ⁿ = kⁿ·(√a)ⁿ.',
+      m:`${expr} = ${pw(k<0?par(ns(k)):k,n)}·${pw(par(rad(a)),n)} = ${ns(k**n)}·${fmt(S.of(1,a).pow(n))} = ${fmt(ans)}`});
+    return R({title:'Végezd el a hatványozást!',expr,ans,hint:'(k√a)ⁿ = kⁿ·(√a)ⁿ, és minden (√a)² helyére a írható.'});
+  }
+  let c1,r1,c2,r2;
+  if(sub==='bin1'){
+    const x=rnd(1,6),t=pick(NONSQ(12)),sg=pick([-1,1]);
+    if(chance(.5)){c1=x;r1=1;c2=sg;r2=t}else{c1=1;r1=t;c2=sg*x;r2=1}
+  }else if(sub==='bin1x'){
+    const x=rnd(1,5),y=pick([-1,1])*rnd(2,3),t=pick([2,3,5,6,7]);c1=x;r1=1;c2=y;r2=t;
+  }else{
+    let a,b;do{a=rnd(2,15);b=rnd(2,15)}while(isSq(a)||isSq(b)||a===b);c1=1;r1=a;c2=pick([-1,1]);r2=b;
+  }
+  const expr=pw(par(E([[c1,r1],[c2,r2]])),2),{out,ans}=binSq(c1,r1,c2,r2);
+  out[0].m=expr+' '+out[0].m;
+  st.push(...out);
+  return R({title:'Végezd el a hatványozást!',expr,ans,hint:'(A + B)² = A² + 2AB + B² és (A − B)² = A² − 2AB + B². Ne feledd: (√a)² = a.'});
+}
+
+/* ===================== Felület ===================== */
+const MODES={
+  ki:{name:'Kihozatal',gen:genKi},be:{name:'Bevitel',gen:genBe},ov:{name:'Összevonás',gen:genOv},
+  sz:{name:'Szorzás',gen:genSz},os:{name:'Osztás',gen:genOs},hv:{name:'Hatványozás',gen:genHv},mix:{name:'Vegyes'}};
+const DIFFS={1:'Könnyű',2:'Közepes',3:'Nehéz'};
+const state={mode:'ki',diff:1,task:null,done:false,tries:0,score:0,total:0,streak:0,counted:false};
+const $=id=>document.getElementById(id);
+const radInput=(id,w)=>`<span class="sq"><span class="sy">√</span><span class="ov"><input id="${id}" autocomplete="off" ${w?`style="width:${w}"`:''} aria-label="gyökjel alatti szám"></span></span>`;
+
+function newTask(){
+  const m=state.mode==='mix'?pick(['ki','be','ov','sz','os','hv']):state.mode;
+  state.task=MODES[m].gen(state.diff);state.done=false;state.tries=0;state.counted=false;render();
+}
+function render(){
+  const t=state.task;
+  $('tTitle').textContent=t.title;
+  $('tMode').textContent=MODES[t.mode].name+' · '+DIFFS[state.diff];
+  $('tExpr').innerHTML=t.expr;
+  let a='',note='';
+  if(t.type==='single'){a=`<span>=</span><input id="iq" autocomplete="off" aria-label="gyökjel előtti szám">${radInput('ir')}`;
+    note='Ha nem marad gyökjel, a gyökjel alatti mezőt hagyd üresen. Ha a gyökjel előtt 1 áll, az első mező üresen maradhat.'}
+  else if(t.type==='full'){a=`<span>=</span><input id="ip" autocomplete="off" aria-label="egész rész"><span>+</span><input id="iq" autocomplete="off" aria-label="gyökjel előtti szám">${radInput('ir')}`;
+    note='Az eredményt p + q√r alakban írd be. A hiányzó részeket hagyd üresen. Negatív szám: −3, tört: 5/2.'}
+  else if(t.type==='be'){a=`<span>=</span>${t.neg?`<span>${MN}</span>`:''}${radInput('ir','5.5em')}`;
+    note='A gyökjel alá egész számot vagy törtet írhatsz (pl. 8/3).'}
+  else{a=['<','=','>'].map(r=>`<button class="cmpb" data-r="${r}">${r==='<'?'&lt;':r==='>'?'&gt;':'='}</button>`).join('');
+    note='Válaszd ki a megfelelő relációjelet!'}
+  $('tAns').innerHTML=a;$('tNote').textContent=note;
+  $('bCheck').style.display=t.type==='cmp'?'none':'';
+  $('bCheck').textContent='Ellenőrzés';
+  document.querySelectorAll('.cmpb').forEach(b=>b.onclick=()=>check(b.dataset.r));
+  const fb=$('fb');fb.className='fb';fb.innerHTML='';
+  const s=$('steps');s.style.display='none';s.innerHTML='';
+  const f=document.querySelector('#tAns input');if(f)f.focus();
+}
+function feedback(kind,html){const fb=$('fb');fb.className='fb '+kind;fb.innerHTML=html}
+function updScore(){$('sc').textContent=`Helyes: ${state.score} / ${state.total}`;$('st').textContent=`Sorozat: ${state.streak}`}
+function val(id){const e=$(id);return e?e.value.trim():''}
+function parseQ(s){
+  s=s.replace(/[−–]/g,'-').replace(/\s+/g,'').replace(',','.');
+  if(s==='')return null;
+  let m=s.match(/^([-+]?\d+)\/(\d+)$/);
+  if(m){if(+m[2]===0)throw'A nevező nem lehet 0.';return new Q(parseInt(m[1],10),parseInt(m[2],10))}
+  m=s.match(/^[-+]?\d+(\.\d+)?$/);
+  if(m){const dec=(s.split('.')[1]||'').length,p=10**dec;return new Q(Math.round(parseFloat(s)*p),p)}
+  throw`Nem értelmezhető szám: „${s}”. Egész számot vagy törtet (pl. 5/2) írj!`;
+}
+function parseCoef(s){const x=s.replace(/[−–]/g,'-').replace(/\s+/g,'');if(x==='-')return new Q(-1);if(x==='+')return new Q(1);return parseQ(x)}
+const PRAISE=['Szuper, helyes!','Ügyes vagy, ez jó!','Pontosan így van!','Kiváló!','Helyes válasz!'];
+
+function check(rel){
+  const t=state.task;
+  if(state.done){newTask();return}
+  let res;
+  try{
+    if(t.type==='cmp')res=rel===t.ans?'ok':'bad';
+    else if(t.type==='be'){const v=parseQ(val('ir'));if(v===null)throw'Írj be egy számot a gyökjel alá!';if(v.n<0)throw'A gyökjel alatt nem állhat negatív szám.';res=v.eq(t.ans)?'ok':'bad'}
+    else{
+      const p=t.type==='full'?parseQ(val('ip')):null,q=parseCoef(val('iq')),rs=val('ir');
+      let r=null;
+      if(rs!==''){if(!/^\d+$/.test(rs))throw'A gyökjel alá nemnegatív egész számot írj!';r=parseInt(rs,10)}
+      if(p===null&&q===null&&r===null)throw'Írd be a választ!';
+      let v=S.of(p||0);
+      if(r!==null)v=v.add(S.of(q===null?1:q,r));
+      else if(q!==null){if(t.type==='single')v=v.add(S.of(q));else throw'Ha nincs gyökös tag, a gyökjel előtti mezőt is hagyd üresen – a számot az első mezőbe írd.'}
+      if(v.eq(t.ans))res=(r!==null&&(r<=1||sqf(r)[0]>1))?'near':'ok';
+      else res='bad';
+    }
+  }catch(e){if(typeof e==='string'){feedback('warn',e);return}throw e}
+  if(!state.counted){state.counted=true;state.total++;if(res==='ok'){state.score++;state.streak++}else state.streak=0}
+  state.tries++;
+  if(res==='ok'){
+    state.done=true;$('bCheck').style.display='';$('bCheck').textContent='Következő feladat';
+    feedback('ok',`${pick(PRAISE)} <span style="font-weight:400">(Enter: következő feladat)</span>`);
+  }else if(res==='near'){
+    feedback('warn','Az érték jó, de még nem a legegyszerűbb alak: a gyökjel alól még kihozható valami (vagy a gyökjel alatt 0, 1 vagy négyzetszám áll). Próbáld tovább egyszerűsíteni!');
+  }else{
+    feedback('bad','Sajnos ez nem jó. Próbáld újra!'+(state.tries>=2?' Kérhetsz segítséget, vagy megnézheted a megoldás lépéseit.':''));
+  }
+  updScore();
+}
+function finalHTML(t){
+  if(t.type==='cmp')return t.final;
+  if(t.type==='be')return`${t.expr} = ${t.neg?MN:''}${rad(qH(t.ans))}`;
+  return`${t.expr} = ${fmt(t.ans)}`;
+}
+function showSteps(){
+  const t=state.task;
+  if(!state.done){
+    if(!state.counted){state.counted=true;state.total++;state.streak=0;updScore()}
+    state.done=true;$('bCheck').style.display='';$('bCheck').textContent='Következő feladat';
+  }
+  const h=t.steps.map(s=>`<div class="step">${s.w?`<div class="why">${s.w}</div>`:''}${s.m?`<div class="mm m">${s.m}</div>`:''}</div>`).join('');
+  const el=$('steps');el.innerHTML=`<h3>A megoldás lépései</h3>${h}<div class="final m"><span style="font-family:system-ui;font-size:.9rem;color:var(--muted)">Eredmény: </span>${finalHTML(t)}</div>`;
+  el.style.display='block';
+}
+const RULES=[
+  ['Szorzás',`${rad('a')}·${rad('b')} = ${rad('a·b')}`,'a ≥ 0, b ≥ 0'],
+  ['Osztás',`${frac(rad('a'),rad('b'))} = ${rad(frac('a','b'))}`,'a ≥ 0, b > 0'],
+  ['Négyzetre emelés',`${pw(par(rad('a')),2)} = a, &nbsp; ${rad(pw('a',2))} = |a|`,'a ≥ 0 (az első azonosságnál)'],
+  ['Kihozatal a gyökjel alól',`${rad(pw('a',2)+'·b')} = a${rad('b')}`,`pl. ${rad(72)} = ${rad('36·2')} = 6${rad(2)}`],
+  ['Bevitel a gyökjel alá',`a${rad('b')} = ${rad(pw('a',2)+'·b')}`,`pl. 3${rad(5)} = ${rad(45)}; negatív szorzónál az előjel kint marad: ${MN}2${rad(3)} = ${MN}${rad(12)}`],
+  ['Összevonás',`p${rad('a')} + q${rad('a')} = (p + q)${rad('a')}`,`csak azonos gyökjel alatti számú tagok vonhatók össze; ${rad('a')} + ${rad('b')} ≠ ${rad('a + b')}`],
+  ['Nevező gyöktelenítése',`${frac('c',rad('a'))} = ${frac('c'+rad('a'),'a')}`,'bővítés √a-val'],
+  ['Gyöktelenítés konjugálttal',`${frac('c','p + '+rad('a'))} = ${frac('c(p − '+rad('a')+')',pw('p',2)+' − a')}`,'(A + B)(A − B) = A² − B²'],
+  ['Hatványozás',`${pw(par('k'+rad('a')),'n')} = ${pw('k','n')}·${pw(par(rad('a')),'n')}`,`pl. ${pw(par(rad(2)),5)} = 4${rad(2)}`],
+];
+function init(){
+  $('modes').innerHTML=Object.entries(MODES).map(([k,v])=>`<button class="tab${k===state.mode?' on':''}" data-m="${k}">${v.name}</button>`).join('');
+  $('diffs').innerHTML=Object.entries(DIFFS).map(([k,v])=>`<button class="tab${+k===state.diff?' on':''}" data-d="${k}">${v}</button>`).join('');
+  document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{state.mode=b.dataset.m;document.querySelectorAll('[data-m]').forEach(x=>x.classList.toggle('on',x===b));newTask()});
+  document.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{state.diff=+b.dataset.d;document.querySelectorAll('[data-d]').forEach(x=>x.classList.toggle('on',x===b));newTask()});
+  $('bCheck').onclick=()=>check();
+  $('bNew').onclick=newTask;
+  $('bSteps').onclick=showSteps;
+  $('bHint').onclick=()=>feedback('info','<b>Segítség:</b> '+state.task.hint);
+  document.addEventListener('keydown',e=>{if(e.key!=='Enter')return;if(e.target.tagName==='INPUT'||state.done){e.preventDefault();check()}});
+  $('rules').innerHTML=RULES.map(([n,m,s])=>`<div class="rule"><b style="font-family:system-ui">${n}</b><div class="mm">${m}</div><small style="font-family:system-ui">${s}</small></div>`).join('');
+  updScore();newTask();
+}
+if(typeof document!=='undefined')init();
+</script>
+</body>
+</html>
